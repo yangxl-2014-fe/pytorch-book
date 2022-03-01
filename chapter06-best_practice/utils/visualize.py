@@ -2,6 +2,7 @@
 import visdom
 import time
 import numpy as np
+import logging
 
 
 class Visualizer(object):
@@ -11,6 +12,7 @@ class Visualizer(object):
     """
 
     def __init__(self, env='default', **kwargs):
+        logging.warning(f'Visualizer::__init__( {env}, .. )')
         self.vis = visdom.Visdom(env=env,use_incoming_socket=False, **kwargs)
 
         # 画的第几个数，相当于横座标

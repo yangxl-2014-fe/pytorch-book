@@ -8,6 +8,10 @@ from torch.utils.data import DataLoader
 from torchnet import meter
 from utils.visualize import Visualizer
 from tqdm import tqdm
+import logging
+import time
+from torch import onnx
+import torch
 
 
 @t.no_grad() # pytorch>=0.5
@@ -45,29 +49,59 @@ def write_csv(results,file_name):
         writer.writerows(results)
     
 def train(**kwargs):
+    logging.warning('--> main.py train()')
     opt._parse(kwargs)
     vis = Visualizer(opt.env,port = opt.vis_port)
 
     # step1: configure model
+    logging.info('step1: configure model')
     model = getattr(models, opt.model)()
+
+    logging.info(model)
+    logging.warning('\n\n === pred[0]')
+    logging.info(model.pre[0])
+    logging.warning('\n\n === layer4[0].left[4]')
+    logging.info(model.layer4[0].left[4])
+    logging.warning('\n\n === pred')  # 1 - 2
+    logging.info(model.pre)
+    logging.warning('\n\n === layer1')  # 3 - 6
+    logging.info(model.layer1)
+    logging.warning('\n\n === layer2')  # 4 - 8
+    logging.info(model.layer2)
+    logging.warning('\n\n === layer3') # 6 - 12
+    logging.info(model.layer3)
+    logging.warning('\n\n === layer4') # 3 - 6
+    logging.info(model.layer4)
+    logging.warning('\n\n === fc') # 1
+    logging.info(model.fc)
+
+
     if opt.load_model_path:
         model.load(opt.load_model_path)
     model.to(opt.device)
+    dummy_input = torch.randn(10, 3, 224, 224, device=opt.device)
+    onnx.export(model, dummy_input, 'checkpoints/resnet34.onnx')
+
 
     # step2: data
+    logging.info('step2: data')
     train_data = DogCat(opt.train_data_root,train=True)
     val_data = DogCat(opt.train_data_root,train=False)
+    logging.info('  train_data: {}'.format(train_data.__len__()))
+    logging.info('  val_data:   {}'.format(val_data.__len__()))
     train_dataloader = DataLoader(train_data,opt.batch_size,
                         shuffle=True,num_workers=opt.num_workers)
     val_dataloader = DataLoader(val_data,opt.batch_size,
                         shuffle=False,num_workers=opt.num_workers)
     
     # step3: criterion and optimizer
+    logging.info('step3: criterion and optimizer')
     criterion = t.nn.CrossEntropyLoss()
     lr = opt.lr
     optimizer = model.get_optimizer(lr, opt.weight_decay)
         
     # step4: meters
+    logging.info('step4: meters')
     loss_meter = meter.AverageValueMeter()
     confusion_matrix = meter.ConfusionMeter(2)
     previous_loss = 1e10
@@ -114,7 +148,9 @@ def train(**kwargs):
         vis.plot('val_accuracy',val_accuracy)
         vis.log("epoch:{epoch},lr:{lr},loss:{loss},train_cm:{train_cm},val_cm:{val_cm}".format(
                     epoch = epoch,loss = loss_meter.value()[0],val_cm = str(val_cm.value()),train_cm=str(confusion_matrix.value()),lr=lr))
-        
+
+        logging.warning('epoch {} val_accuracy: {}'.format(epoch, val_accuracy))
+
         # update learning rate
         if loss_meter.value()[0] > previous_loss:          
             lr = lr * opt.lr_decay
@@ -161,5 +197,8 @@ def help():
     print(source)
 
 if __name__=='__main__':
+    time_beg = time.time()
     import fire
     fire.Fire()
+    time_end = time.time()
+    logging.info('elapsed {} seconds'.format(time_end - time_beg))

@@ -1,6 +1,7 @@
 #coding:utf8
 import torch as t
 import time
+import logging
 
 
 class BasicModule(t.nn.Module):
@@ -9,6 +10,7 @@ class BasicModule(t.nn.Module):
     """
 
     def __init__(self):
+        logging.warning('BasicModule::__init__()')
         super(BasicModule,self).__init__()
         self.model_name=str(type(self))# 默认名字
 
@@ -16,12 +18,14 @@ class BasicModule(t.nn.Module):
         """
         可加载指定路径的模型
         """
+        logging.warning(f'BasicModule::load( {path} )')
         self.load_state_dict(t.load(path))
 
     def save(self, name=None):
         """
         保存模型，默认使用“模型名字+时间”作为文件名
         """
+        logging.warning(f'BasicModule::save( {name} )')
         if name is None:
             prefix = 'checkpoints/' + self.model_name + '_'
             name = time.strftime(prefix + '%m%d_%H:%M:%S.pth')
@@ -29,6 +33,7 @@ class BasicModule(t.nn.Module):
         return name
 
     def get_optimizer(self, lr, weight_decay):
+        logging.warning(f'BasicModule::get_optimizer( lr={lr}, weight_decay={weight_decay} )')
         return t.optim.Adam(self.parameters(), lr=lr, weight_decay=weight_decay)
 
 
@@ -38,6 +43,7 @@ class Flat(t.nn.Module):
     """
 
     def __init__(self):
+        logging.warning('Flat::__init__()')
         super(Flat, self).__init__()
         #self.size = size
 

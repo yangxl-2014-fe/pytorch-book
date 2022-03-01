@@ -2,6 +2,7 @@
 from .basic_module import BasicModule
 from torch import nn
 from torch.nn import functional as F
+import logging
 
 
 class ResidualBlock(nn.Module):
@@ -10,6 +11,7 @@ class ResidualBlock(nn.Module):
     """
 
     def __init__(self, inchannel, outchannel, stride=1, shortcut=None):
+        logging.warning(f'ResidualBlock( {inchannel}, {outchannel}, {stride}, {shortcut} )')
         super(ResidualBlock, self).__init__()
         self.left = nn.Sequential(
             nn.Conv2d(inchannel, outchannel, 3, stride, 1, bias=False),
@@ -34,6 +36,7 @@ class ResNet34(BasicModule):
     """
 
     def __init__(self, num_classes=2):
+        logging.warning(f'ResNet34::__init__( num_classes={num_classes} )')
         super(ResNet34, self).__init__()
         self.model_name = 'resnet34'
 
@@ -57,6 +60,7 @@ class ResNet34(BasicModule):
         """
         构建layer,包含多个residual block
         """
+        logging.warning(f'ResNet34::_make_layer( {inchannel}, {outchannel}, {block_num}, {stride} )')
         shortcut = nn.Sequential(
             nn.Conv2d(inchannel, outchannel, 1, stride, bias=False),
             nn.BatchNorm2d(outchannel))

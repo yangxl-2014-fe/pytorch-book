@@ -4,6 +4,7 @@ from PIL import Image
 from torch.utils import data
 import numpy as np
 from torchvision import transforms as T
+import logging
 
 
 class DogCat(data.Dataset):
@@ -12,8 +13,10 @@ class DogCat(data.Dataset):
         """
         主要目标： 获取所有图片的地址，并根据训练，验证，测试划分数据
         """
+        logging.warning('DogCat::__init__(..)')
         self.test = test
         imgs = [os.path.join(root, img) for img in os.listdir(root)]
+        logging.info('  total imgs: {}'.format(len(imgs)))
 
         # test1: data/test1/8973.jpg
         # train: data/train/cat.10004.jpg 
@@ -24,12 +27,19 @@ class DogCat(data.Dataset):
 
         imgs_num = len(imgs)
 
+        pre_str = ''
         if self.test:
             self.imgs = imgs
+            pre_str = 'test:  '
         elif train:
             self.imgs = imgs[:int(0.7 * imgs_num)]
+            pre_str = 'train: '
         else:
             self.imgs = imgs[int(0.7 * imgs_num):]
+            pre_str = 'val:   '
+
+
+        logging.info(f'  total {pre_str}: {len(imgs)}')
 
         if transforms is None:
             normalize = T.Normalize(mean=[0.485, 0.456, 0.406],
@@ -45,7 +55,7 @@ class DogCat(data.Dataset):
             else:
                 self.transforms = T.Compose([
                     T.Resize(256),
-                    T.RandomReSizedCrop(224),
+                    T.RandomResizedCrop(224),
                     T.RandomHorizontalFlip(),
                     T.ToTensor(),
                     normalize
